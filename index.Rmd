@@ -11,13 +11,471 @@ mode        : selfcontained # {standalone, draft}
 knit        : slidify::knit2slides
 ---
 
-## Read-And-Delete
 
-1. Edit YAML front matter
-2. Write using R Markdown
-3. Use an empty line followed by three dashes to separate slides!
+## About Me
+
+My name is Thiemo. I am an engineer working in the Energy industry. 
+One of my personal interests is Machine Learning. Ever since I discovered Coursera, I have been a great fan of it. 
+
+Just wish I had more time to devote to it!    
+
 
 --- .class #id 
 
-## Slide 2
+## Introduction
+
+The Titanic was a British passenger liner that sank in the North Atlantic Ocean in the early morning of 15 April 1912 
+after colliding with an iceberg during her maiden voyage from Southampton, UK to New York City, US. 
+
+The sinking of Titanic caused the deaths of more than 1,500 people in one of the deadliest peacetime maritime disasters 
+in modern history. Source: Wikipedia
+
+The Titanic is also the theme for a machine learning competition on kaggle.com. The Titanic competition is a so called knowledge competition designed to learn as well as test your knowledge by competing against the community."
+    
+I have used the Titanic competion as theme for my Shiny App and Slidify presentation that I created for the Coursera course on Developing Data Products by the John Hopkins University.
+
+
+--- .class #id
+
+
+## Titanic Data
+
+
+Here is how to load up the training data from my github page for the Kaggle Titanic competion
+```{r}
+train <- read.csv(url('https://raw.github.com/thiemom/titanic/master/train.csv'), 
+                  na.strings=c("NA",""))
+```
+
+Now let's look at the features and samples in the data
+```{r}
+names(train)
+nrow(train)
+```
+
+
+---
+
+
+## Exploring the Data
+
+The goal of the competition is to predict if passengers in the test data have survived using Machine Learning techniques.
+
+The workflow I followed was
+
+1. Check for missing data
+2. Visualize the data
+3. Feature engineering
+4. Variable selection
+5. Model building
+
+
+---
+
+
+## Missing Data
+
+to check for missing data I used the Amelia package missmap plot
+
+```{r, echo=FALSE, message=FALSE, fig.width=12, tidy=TRUE}
+require(Amelia)
+print(missmap(train, main="Titanic Training Data - Missing Data Map", 
+        col=c("blue", "gray"), legend=TRUE))
+```
+
+
+---
+
+## Summary Missing Data
+
+1. The Cabin feature has so much missing data that it is hard to imagine it will be of any use
+2. The Age feature might be usable, but requires imputation!
+3. The Embarked feature only has 2 missing observations, easy to fix
+4. All other feature are pretty clean, they can be used as-is
+
+
+---
+
+## Fate of the Titanic Passengers
+
+Most of the passengers in the training data did not survive the tragedy
+
+```{r, echo=FALSE, message=FALSE, tidy=TRUE}
+print(barplot(table(train$Survived),
+        names.arg = c("Perished", "Survived"),
+        main="Titanic Training Data - Fate of the Passengers", col="gray"))
+```
+
+
+---
+
+
+## Women and Children First ?
+The Titanic disaster was famous for the "Women and Children first" evacuation policy. 
+Indeed a higher percentage of women and children survived!
+```{r, echo=FALSE, message=FALSE}
+train$AgeGrp <- "adult"
+train$AgeGrp[train$Age<=14] <- "child"
+train$AgeGrp <- factor(train$AgeGrp)
+```
+
+```{r, echo=FALSE, message=FALSE, fig.width=12, tidy=TRUE}
+par(mfrow=c(1,2))
+mosaicplot(train$Sex ~ train$Survived, 
+           main="Passenger Fate by Gender", shade=FALSE, color=TRUE, 
+           xlab="Sex", ylab="Survived")
+
+mosaicplot(train$AgeGrp ~ train$Survived, 
+           main="Passenger Fate by Age Group", shade=FALSE, color=TRUE,
+           xlab="Age Group", ylab="Survived")
+```
+
+---
+
+## Feature Engineering
+
+After missing data imputation for Age and Embarked additional data features were engineered:
+
+1. Consolidate and simplified Titles
+  - Mrs, Miss, Mr, Master consolidated
+  - New "honorific" First (women and children)
+  - New "honorific" Last (noble men and Reverends)
+2. Family size
+  - Siblings, spouses, parents and children  
+3. Family Identifier
+  - Uniqie id combining the family sizes and surnames
+4. Passenger deck
+
+---
+
+
+## Variable Selection
+
+Variable importance was assessed using Random Forests using the Caret package. 
+
+```{r, echo=FALSE, message=FALSE, fig.width=10, tidy=TRUE}
+
+# reload data
+train <- read.csv(url('https://raw.github.com/thiemom/titanic/master/train.csv'), 
+                  na.strings=c("NA",""))
+test <- read.csv(url('https://raw.github.com/thiemom/titanic/master/test.csv'), 
+                  na.strings=c("NA",""))
+
+# count number of samples in the training and test data
+ntrain <- nrow(train)
+ntest <- nrow(test)
+
+# join together the test and train data sets for easier data mungling and feature engineering later
+# the test data set does not have the Survived feature, so let's create it first and initialize with NA
+test$Survived <- NA
+combi <- rbind(train, test)
+ncombi <- nrow(combi)
+
+# custom function to extract the engineered feature Title from the dataset
+extractTitle <- function(df, simplify=1) {
+  names <- as.character(df$Name)
+  titles <- sapply(names, FUN=function(x) {strsplit(x, split='[,.]')[[1]][2]}) # split string
+  titles <- gsub('^ ', '', titles) # get rid of leading whitespaces
+  # convert french title to equivalent english title
+  titles[titles %in% c('Mme')] <- 'Mrs'
+  titles[titles %in% c('Mlle')] <- 'Miss'
+  if (simplify==1) {
+    # simplify royalty titles
+    titles[titles %in% c('the Countess', 'Dona')] <- 'Lady'
+    titles[titles %in% c('Jonkheer', 'Don')] <- 'Sir'
+    # simplify Ms: Wikipedia says it is a general title, so lets check for Siblings and Spouces
+    ind <- which(titles=='Ms' & df$SibSp==0)
+    titles[ind] <- 'Miss'
+    ind <- which(titles=='Ms' & df$SibSp>0)
+    titles[ind] <- 'Mrs'
+    # simplify Dr: could be male or female
+    # I assume female Dr are married here as I have no further information and there are not may Dr anyway
+    ind <- which(titles=='Dr' & df$Sex=='male')
+    titles[ind] <- 'Mr'
+    ind <- which(titles=='Dr' & df$Sex=='female')
+    titles[ind] <- 'Mrs'
+    # simplify military titles
+    titles[titles %in% c('Capt', 'Col', 'Major')] <- 'Mr'
+    # finally the Titanic disaster was famous for the application of Women and Children first
+    # thinking about it a bit, I will assume that this rule is applied due to the customs
+    # of the time, and likely also to maintain honour (royalty / crew)
+    # women with families are perhaps less concerned with their personal safety, so I keep them seperate
+    # reverends are also less likely to be concerner with their personal safety and more with the ones staying on the ship
+    titles[titles %in% c('Lady', 'Miss')] <- 'First'
+    titles[titles %in% c('Sir', 'Rev')] <- 'Last'
+  }
+  # Convert to a factor
+  titles <- factor(titles)
+  return(titles)
+}
+
+combi$Title <- extractTitle(combi, simplify=1)
+
+# Engineered variable: Family size
+# Reading the data feature description page, the SibSp feature counts Siblings and Spouces
+# and the Parch feature countsParents and Children
+# The total family size is then SibSp + Parch + 1 for the person
+combi$FamSize <- combi$SibSp + combi$Parch + 1
+
+# Extract the engineered feature FamId from the dataset
+# Again following Trevor Stephens tutorial, it makes sense to engineer a feature that describes
+# the family size. The idea being that large family have a harder (or is it easier?) time keeping track
+# of family members to get into a lifeboat
+# To create the unique family IDs, the surname and family size features are combined
+
+# First lets extract the Surnames, similar to the Title approach
+combi$Surname <- sapply(as.character(combi$Name), FUN=function(x) {strsplit(x, split='[,.]')[[1]][1]})
+combi$Surname <- factor(combi$Surname)
+# Combine the Surname with the family size
+combi$FamId <- paste(as.character(combi$FamSize), as.character(combi$Surname), sep="-")
+# Group individuals and couples together
+combi$FamId[combi$FamSize == 1] <- 'Singles'
+combi$FamId[combi$FamSize == 2] <- 'Couples'
+# Somehow there are some families that don't match the FamSize
+# So let's delete erroneous family Ids
+tmp <- data.frame(table(combi$FamId))
+Singles <- tmp[tmp$Freq <= 1,]
+Couples <- tmp[tmp$Freq == 2,]
+combi$FamId[combi$FamId %in% Singles$Var1] <- 'Singles'
+combi$FamId[combi$FamId %in% Couples$Var1] <- 'Couples'
+combi$FamId <- factor(combi$FamId)
+
+# Now continue with missing data treatment
+# Ok, so we are missing quite some Age data which sounds like it could be useful
+# I will use rpart to impute the missing data based on a data model
+require(rpart)
+
+# Fill in Age NAs
+# There seems to be 263 NAs
+# Age is likely related to Pclass, Sex, FamSize, Title and maybe also where passengers embarked
+# Let's try this, following Trevor Stephens tutorial again
+Agefit <- rpart(Age ~ Pclass + Sex + SibSp + Parch + Fare + Embarked + Title + FamSize,
+                data=combi[!is.na(combi$Age),], method="anova")
+combi$Age[is.na(combi$Age)] <- predict(Agefit, combi[is.na(combi$Age),])
+
+# Fill in Embarked blanks
+# Find which entries are NA
+ix <- which(combi$Embarked == '')
+# replace the 2 missing entries with the most common value ("S")
+combi$Embarked[c(ix)] = names(table(combi$Embarked)[which.max(table(combi$Embarked))])
+combi$Embarked <- factor(combi$Embarked)
+
+# Fill in missing Fare data
+# Fare likely depends on Pclass, Embarked, and maybe Title and FamSize
+Farefit <- rpart(Fare ~ Pclass + Embarked + Title + FamSize,
+                 data=combi[!is.na(combi$Fare),], method="anova")
+combi$Fare[is.na(combi$Fare)] <- predict(Farefit, combi[is.na(combi$Fare),])
+
+# try to calculate Fare per person
+combi$Fare.pp <- combi$Fare/combi$FamSize
+
+# Add category Child
+combi$Child <- 0
+combi$Child[combi$Age < 15] <- 1 # let's call passengers with age 15 or less children
+combi$Child <- factor(combi$Child)
+
+# Add categories boy and girl for male and female Children
+combi$Boy <- combi$Child
+combi$Boy[combi$Sex == 'female'] <- 0
+combi$Girl <- combi$Child
+combi$Girl[combi$Sex == 'male'] <- 0
+
+# Extract deck information where available
+# The 1-st character in Cabin number represents the Deck
+combi$Deck <- substring(combi$Cabin, 1, 1)
+combi$Deck[which(is.na(combi$Deck))] <- "Missing"
+combi$Deck <- factor(combi$Deck)
+
+# add new factor fate
+combi$Fate <- 'Perished'
+combi$Fate[which(is.na(combi$Survived))] <- NA
+combi$Fate[which(combi$Survived==1)] <- "Survived"
+combi$Fate <- factor(combi$Fate)
+
+# make the feature Survived a factor
+combi$Survived <- factor(combi$Survived)
+
+# Split back into test and train sets
+rm(train, test)
+train <- combi[1:ntrain,]
+test <- combi[(ntrain+1):ncombi,]
+
+require(party)
+
+# select features for variable selection
+Keep <- c("Fate","Pclass","Sex","Age","SibSp",
+          "Parch","Fare","Embarked","Title",
+          "FamSize","FamId","Child","Deck")
+
+train <- train[Keep]
+# mtry will be set to sqrt of number of features
+sqrtn = floor(sqrt(length(names(train))))
+# train condition interference forest
+cf <- cforest(Fate ~ ., data=train,
+              control=cforest_unbiased(mtry=sqrtn,
+                                       ntree=100))
+# get variable importance
+vImp <- varimp(cf)
+svImp <- -sort(-vImp) # sort descending
+svImp <- svImp/sum(svImp) # normalize importance to unity
+barplot(svImp, las=2) # plot variable importance
+```
+
+
+
+---
+
+## Important Variables
+
+The top 5 most important variables:
+```{r, echo=FALSE, message=FALSE}
+# print most important variables
+ntop = 5 # how many to print
+vRank = rank(-svImp) # get the rank
+svRank = sort(vRank) # sort by rank
+# show table with top variables
+for (i in 1:ntop) {
+  cat(i, "\t", names(svRank[i]), "\n") 
+}
+
+ModelVars <- names(svRank[1:ntop])                  
+```
+
+These variables have been used for the model building and evaluation
+
+
+---
+
+
+## Model Selection
+
+For model selection the Caret package has been used. The caret package is a set of functions that attempt to streamline the process for creating predictive models.
+
+First the training dataset was split in a model training (80%) and validation (20%) dataset. The test dataset cannot be used yet, it will be used at the end of the Titanic competition by Kaggle to determine the final model performance.
+
+Finally 3 different machine learning techniques are compared.
+
+1. Logistic Regression
+2. Random Forest (RF)
+3. Suport Vector Machine (SVM) with a radial kernel
+
+
+---
+
+
+## Response Operator Characteristic (ROC)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE, tidy=TRUE, cache=TRUE}
+
+# select vars
+train.selected <- train[c('Fate', ModelVars)]
+
+# split training data into train batch (80%) and test batch (20%)
+train.rows <- createDataPartition(
+  train.selected$Fate, p=0.8, list = FALSE)
+train.batch <- train.selected[train.rows, ]
+test.batch <- train.selected[-train.rows, ]
+
+# Define control function to handle optional arguments for train function
+cv.ctrl <- trainControl(method = "repeatedcv", repeats = 3, summaryFunction = twoClassSummary, classProbs = TRUE)
+
+set.seed(2014)
+
+# logistic regression
+glm <- train(Fate ~ ., data = train.batch,
+  method = "glm", metric = "ROC", trControl = cv.ctrl)
+
+glm.pred <- predict(glm, test.batch)
+confusionMatrix(glm.pred, test.batch$Fate)
+glm.probs <- predict(glm, test.batch, type = "prob")
+
+# random forest
+rf.grid <- data.frame(.mtry = c(2, 3))
+rf <- train(Fate ~ ., data = train.batch,
+            method = "rf", metric = "ROC",
+            tuneGrid = rf.grid, trControl = cv.ctrl)
+
+# svm
+svm <- train(Fate ~ ., data = train.batch,
+             method = "svmRadial", tuneLength = 9,
+             preProcess = c("center", "scale"),
+             metric = "ROC", trControl = cv.ctrl)
+
+# now the models are going to assessed based on largest area under ROC curve
+# logistic regression
+glm.probs <- predict(glm, test.batch, type = "prob")
+glm.ROC <- roc(response = test.batch$Fate,
+               predictor = glm.probs$Survived,
+               levels = levels(test.batch$Fate))
+
+# Random Forest 
+rf.probs <- predict(rf, test.batch, type = "prob")
+rf.ROC <- roc(response = test.batch$Fate,
+              predictor = rf.probs$Survived,
+              levels = levels(test.batch$Fate))
+
+# SVM
+svm.probs <- predict(svm, test.batch, type = "prob")
+svm.ROC <- roc(response = test.batch$Fate,
+               predictor = svm.probs$Survived,
+               levels = levels(test.batch$Fate))
+
+```
+
+A ROC plot illustrates the performance of a binary classifier system as its discrimination threshold is varied. The curve is created by plotting the true positive rate against the false positive rate at various threshold settings.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide', fig.width=6, fig.height=4}
+
+# plot the ROC curves
+plot(glm.ROC, type="S", col="blue", lwd=4)
+plot(rf.ROC, add=TRUE, col="red", lwd=4)
+plot(svm.ROC, add=TRUE, col="green", lwd=4)
+
+# add custom legend
+legend("topleft", c("LogIt","RF","SVM"), text.col=c("blue","red","green"))
+```
+
+```{r, echo=FALSE, message=FALSE}
+# output areas under the curve
+cat(" Area under the LogIt curve:", "\t", auc(glm.ROC), "\n",
+    "Area under the RF curve:", "\t\t", auc(rf.ROC), "\n",
+    "Area under the SVM curve:", "\t\t", auc(svm.ROC))
+```
+
+
+---
+
+## Model Evaluation Summary
+
+All models performed similar. All three models predicted passenger fatalities better than survivals, and none were significantly better or worse than the others. Having to pick one, I went for the Random Forest as it did have a slight, if insignificant, edge.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide', fig.height=6, fig.width=6}
+
+# compare cross-validation ROC area under the curve values
+cv.values <- resamples(list(Logit = glm, RF = rf, SVM = svm))
+print(cv.values)
+dotplot(cv.values, metric = "ROC", main="Titanic Prediction Models Evaluation")
+
+```
+
+
+
+## Model Prediction
+
+To create the final model, the selected Random Forest model was re-trained using all training data. How well it will do on the Titanic competion? We will see. For the moment my submission is scoring pretty high. But that does not at all mean the model will do well on the other 50% of the test data. We will see in December 2014!
+
+
+
+---
+
+## Acknowledgements
+
+
+I learned a lot about R and the Titanic competition from these two tutorials
+
+1. Stepen Trevors (trevorstephens.com/post/72916401642/titanic-getting-started-with-r)
+
+2. Curt Wehrley (github.com/wehrley/wehrley.github.io/blob/master/SOUPTONUTS.md)
+
+
 
