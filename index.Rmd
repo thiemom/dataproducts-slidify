@@ -11,17 +11,6 @@ mode        : selfcontained # {standalone, draft}
 knit        : slidify::knit2slides
 ---
 
-
-## About Me
-
-My name is Thiemo. I am an engineer working in the Energy industry. 
-One of my personal interests is Machine Learning. Ever since I discovered Coursera, I have been a great fan of it. 
-
-Just wish I had more time to devote to it!    
-
-
---- .class #id 
-
 ## Introduction
 
 The Titanic was a British passenger liner that sank in the North Atlantic Ocean in the early morning of 15 April 1912 
@@ -34,81 +23,13 @@ The Titanic is also the theme for a machine learning competition on kaggle.com. 
     
 I have used the Titanic competion as theme for my Shiny App and Slidify presentation that I created for the Coursera course on Developing Data Products by the John Hopkins University.
 
-
---- .class #id
-
-
-## Titanic Data
-
-
-Here is how to load up the training data from my github page for the Kaggle Titanic competion
-```{r}
+```{r, echo=FALSE, message=FALSE}
 train <- read.csv(url('https://raw.github.com/thiemom/titanic/master/train.csv'), 
                   na.strings=c("NA",""))
 ```
 
-Now let's look at the features and samples in the data
-```{r}
-names(train)
-nrow(train)
-```
-
 
 ---
-
-
-## Exploring the Data
-
-The goal of the competition is to predict if passengers in the test data have survived using Machine Learning techniques.
-
-The workflow I followed was
-
-1. Check for missing data
-2. Visualize the data
-3. Feature engineering
-4. Variable selection
-5. Model building
-
-
----
-
-
-## Missing Data
-
-to check for missing data I used the Amelia package missmap plot
-
-```{r, echo=FALSE, message=FALSE, fig.width=12, tidy=TRUE}
-require(Amelia)
-print(missmap(train, main="Titanic Training Data - Missing Data Map", 
-        col=c("blue", "gray"), legend=TRUE))
-```
-
-
----
-
-## Summary Missing Data
-
-1. The Cabin feature has so much missing data that it is hard to imagine it will be of any use
-2. The Age feature might be usable, but requires imputation!
-3. The Embarked feature only has 2 missing observations, easy to fix
-4. All other feature are pretty clean, they can be used as-is
-
-
----
-
-## Fate of the Titanic Passengers
-
-Most of the passengers in the training data did not survive the tragedy
-
-```{r, echo=FALSE, message=FALSE, tidy=TRUE}
-print(barplot(table(train$Survived),
-        names.arg = c("Perished", "Survived"),
-        main="Titanic Training Data - Fate of the Passengers", col="gray"))
-```
-
-
----
-
 
 ## Women and Children First ?
 The Titanic disaster was famous for the "Women and Children first" evacuation policy. 
@@ -119,7 +40,7 @@ train$AgeGrp[train$Age<=14] <- "child"
 train$AgeGrp <- factor(train$AgeGrp)
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=12, tidy=TRUE}
+```{r, echo=FALSE, message=FALSE, fig.width=10, fig.height=5, tidy=TRUE}
 par(mfrow=c(1,2))
 mosaicplot(train$Sex ~ train$Survived, 
            main="Passenger Fate by Gender", shade=FALSE, color=TRUE, 
@@ -130,28 +51,7 @@ mosaicplot(train$AgeGrp ~ train$Survived,
            xlab="Age Group", ylab="Survived")
 ```
 
----
-
-## Feature Engineering
-
-After missing data imputation for Age and Embarked additional data features were engineered:
-
-1. Consolidate and simplified Titles
-  - Mrs, Miss, Mr, Master consolidated
-  - New "honorific" First (women and children)
-  - New "honorific" Last (noble men and Reverends)
-2. Family size
-  - Siblings, spouses, parents and children  
-3. Family Identifier
-  - Uniqie id combining the family sizes and surnames
-4. Passenger deck
-
----
-
-
-## Variable Selection
-
-Variable importance was assessed using Random Forests using the Caret package. 
+Now let's select the main variables and compare some machine learning models ...
 
 ```{r, echo=FALSE, message=FALSE, fig.width=10, tidy=TRUE}
 
@@ -322,12 +222,6 @@ barplot(svImp, las=2) # plot variable importance
 ```
 
 
-
----
-
-## Important Variables
-
-The top 5 most important variables:
 ```{r, echo=FALSE, message=FALSE}
 # print most important variables
 ntop = 5 # how many to print
@@ -340,30 +234,6 @@ for (i in 1:ntop) {
 
 ModelVars <- names(svRank[1:ntop])                  
 ```
-
-These variables have been used for the model building and evaluation
-
-
----
-
-
-## Model Selection
-
-For model selection the Caret package has been used. The caret package is a set of functions that attempt to streamline the process for creating predictive models.
-
-First the training dataset was split in a model training (80%) and validation (20%) dataset. The test dataset cannot be used yet, it will be used at the end of the Titanic competition by Kaggle to determine the final model performance.
-
-Finally 3 different machine learning techniques are compared.
-
-1. Logistic Regression
-2. Random Forest (RF)
-3. Suport Vector Machine (SVM) with a radial kernel
-
-
----
-
-
-## Response Operator Characteristic (ROC)
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE, tidy=TRUE, cache=TRUE}
 
@@ -422,7 +292,14 @@ svm.ROC <- roc(response = test.batch$Fate,
 
 ```
 
-A ROC plot illustrates the performance of a binary classifier system as its discrimination threshold is varied. The curve is created by plotting the true positive rate against the false positive rate at various threshold settings.
+
+
+---
+
+## Model Evaluation
+
+ROC plots illustrate the performance of a binary classifier system as its discrimination threshold is varied. The curves are created by plotting the true positive rate against the false positive rate at various threshold settings.
+Looks like we have a winner, or is it coincidence?
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide', fig.width=6, fig.height=4}
 
@@ -449,7 +326,7 @@ cat(" Area under the LogIt curve:", "\t", auc(glm.ROC), "\n",
 
 All models performed similar. All three models predicted passenger fatalities better than survivals, and none were significantly better or worse than the others. Having to pick one, I went for the Random Forest as it did have a slight, if insignificant, edge.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide', fig.height=6, fig.width=6}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide', fig.height=4, fig.width=6}
 
 # compare cross-validation ROC area under the curve values
 cv.values <- resamples(list(Logit = glm, RF = rf, SVM = svm))
@@ -458,24 +335,9 @@ dotplot(cv.values, metric = "ROC", main="Titanic Prediction Models Evaluation")
 
 ```
 
+The final answer will be known at the end of the Kaggle competition in December 2014. Can you do better? 
+Try it out on http://thiemom.shinyapps.io/dataproducts-titanic
 
-
-## Model Prediction
-
-To create the final model, the selected Random Forest model was re-trained using all training data. How well it will do on the Titanic competion? We will see. For the moment my submission is scoring pretty high. But that does not at all mean the model will do well on the other 50% of the test data. We will see in December 2014!
-
-
-
----
-
-## Acknowledgements
-
-
-I learned a lot about R and the Titanic competition from these two tutorials
-
-1. Stepen Trevors (trevorstephens.com/post/72916401642/titanic-getting-started-with-r)
-
-2. Curt Wehrley (github.com/wehrley/wehrley.github.io/blob/master/SOUPTONUTS.md)
 
 
 

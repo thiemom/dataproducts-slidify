@@ -1,6 +1,7 @@
 Amelia
 base
 caret
+e1071
 foreign
 ggplot2
 googleVis
@@ -15,6 +16,8 @@ Rcpp
 RcppArmadillo
 rpart
 sandwich
+shiny
+shinyapps
 slidify
 strucchange
 zoo

@@ -43,20 +43,6 @@
     <!-- SLIDES -->
     <slide class="" id="slide-1" style="background:;">
   <hgroup>
-    <h2>About Me</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>My name is Thiemo. I am an engineer working in the Energy industry. 
-One of my personal interests is Machine Learning. Ever since I discovered Coursera, I have been a great fan of it. </p>
-
-<p>Just wish I had more time to devote to it!    </p>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="class" id="id" style="background:;">
-  <hgroup>
     <h2>Introduction</h2>
   </hgroup>
   <article data-timings="">
@@ -74,31 +60,44 @@ in modern history. Source: Wikipedia</p>
   <!-- Presenter Notes -->
 </slide>
 
-<slide class="class" id="id" style="background:;">
+<slide class="" id="slide-2" style="background:;">
   <hgroup>
-    <h2>Titanic Data</h2>
+    <h2>Women and Children First ?</h2>
   </hgroup>
   <article data-timings="">
-    <p>Here is how to load up the training data from my github page for the Kaggle Titanic competion</p>
+    <p>The Titanic disaster was famous for the &quot;Women and Children first&quot; evacuation policy. 
+Indeed a higher percentage of women and children survived!</p>
 
-<pre><code class="r">train &lt;- read.csv(url(&#39;https://raw.github.com/thiemom/titanic/master/train.csv&#39;), 
-                  na.strings=c(&quot;NA&quot;,&quot;&quot;))
+<p><img src="assets/fig/unnamed-chunk-3-1.png" alt="plot of chunk unnamed-chunk-3"> </p>
+
+<p>Now let&#39;s select the main variables and compare some machine learning models ...</p>
+
+<p><img src="assets/fig/unnamed-chunk-4-1.png" alt="plot of chunk unnamed-chunk-4"> </p>
+
+<pre><code>## 1     Title 
+## 2     Sex 
+## 3     Pclass 
+## 4     Deck 
+## 5     FamSize
 </code></pre>
 
-<p>Now let&#39;s look at the features and samples in the data</p>
+  </article>
+  <!-- Presenter Notes -->
+</slide>
 
-<pre><code class="r">names(train)
-</code></pre>
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>Model Evaluation</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>ROC plots illustrate the performance of a binary classifier system as its discrimination threshold is varied. The curves are created by plotting the true positive rate against the false positive rate at various threshold settings.
+Looks like we have a winner, or is it coincidence?</p>
 
-<pre><code>##  [1] &quot;PassengerId&quot; &quot;Survived&quot;    &quot;Pclass&quot;      &quot;Name&quot;        &quot;Sex&quot;        
-##  [6] &quot;Age&quot;         &quot;SibSp&quot;       &quot;Parch&quot;       &quot;Ticket&quot;      &quot;Fare&quot;       
-## [11] &quot;Cabin&quot;       &quot;Embarked&quot;
-</code></pre>
+<p><img src="assets/fig/unnamed-chunk-7-1.png" alt="plot of chunk unnamed-chunk-7"> </p>
 
-<pre><code class="r">nrow(train)
-</code></pre>
-
-<pre><code>## [1] 891
+<pre><code>##  Area under the LogIt curve:      0.874258 
+##  Area under the RF curve:         0.8642742 
+##  Area under the SVM curve:        0.8385051
 </code></pre>
 
   </article>
@@ -107,221 +106,15 @@ in modern history. Source: Wikipedia</p>
 
 <slide class="" id="slide-4" style="background:;">
   <hgroup>
-    <h2>Exploring the Data</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>The goal of the competition is to predict if passengers in the test data have survived using Machine Learning techniques.</p>
-
-<p>The workflow I followed was</p>
-
-<ol>
-<li>Check for missing data</li>
-<li>Visualize the data</li>
-<li>Feature engineering</li>
-<li>Variable selection</li>
-<li>Model building</li>
-</ol>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-5" style="background:;">
-  <hgroup>
-    <h2>Missing Data</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>to check for missing data I used the Amelia package missmap plot</p>
-
-<p><img src="assets/fig/unnamed-chunk-3-1.png" alt="plot of chunk unnamed-chunk-3"> </p>
-
-<pre><code>## NULL
-</code></pre>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-6" style="background:;">
-  <hgroup>
-    <h2>Summary Missing Data</h2>
-  </hgroup>
-  <article data-timings="">
-    <ol>
-<li>The Cabin feature has so much missing data that it is hard to imagine it will be of any use</li>
-<li>The Age feature might be usable, but requires imputation!</li>
-<li>The Embarked feature only has 2 missing observations, easy to fix</li>
-<li>All other feature are pretty clean, they can be used as-is</li>
-</ol>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-7" style="background:;">
-  <hgroup>
-    <h2>Fate of the Titanic Passengers</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>Most of the passengers in the training data did not survive the tragedy</p>
-
-<p><img src="assets/fig/unnamed-chunk-4-1.png" alt="plot of chunk unnamed-chunk-4"> </p>
-
-<pre><code>##      [,1]
-## [1,]  0.7
-## [2,]  1.9
-</code></pre>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-8" style="background:;">
-  <hgroup>
-    <h2>Women and Children First ?</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>The Titanic disaster was famous for the &quot;Women and Children first&quot; evacuation policy. 
-Indeed a higher percentage of women and children survived!</p>
-
-<p><img src="assets/fig/unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6"> </p>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-9" style="background:;">
-  <hgroup>
-    <h2>Feature Engineering</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>After missing data imputation for Age and Embarked additional data features were engineered:</p>
-
-<ol>
-<li>Consolidate and simplified Titles
-
-<ul>
-<li>Mrs, Miss, Mr, Master consolidated</li>
-<li>New &quot;honorific&quot; First (women and children)</li>
-<li>New &quot;honorific&quot; Last (noble men and Reverends)</li>
-</ul></li>
-<li>Family size
-
-<ul>
-<li>Siblings, spouses, parents and children<br></li>
-</ul></li>
-<li>Family Identifier
-
-<ul>
-<li>Uniqie id combining the family sizes and surnames</li>
-</ul></li>
-<li>Passenger deck</li>
-</ol>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-10" style="background:;">
-  <hgroup>
-    <h2>Variable Selection</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>Variable importance was assessed using Random Forests using the Caret package. </p>
-
-<p><img src="assets/fig/unnamed-chunk-7-1.png" alt="plot of chunk unnamed-chunk-7"> </p>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-11" style="background:;">
-  <hgroup>
-    <h2>Important Variables</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>The top 5 most important variables:</p>
-
-<pre><code>## 1     Title 
-## 2     Sex 
-## 3     Pclass 
-## 4     Fare 
-## 5     FamId
-</code></pre>
-
-<p>These variables have been used for the model building and evaluation</p>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-12" style="background:;">
-  <hgroup>
-    <h2>Model Selection</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>For model selection the Caret package has been used. The caret package is a set of functions that attempt to streamline the process for creating predictive models.</p>
-
-<p>First the training dataset was split in a model training (80%) and validation (20%) dataset. The test dataset cannot be used yet, it will be used at the end of the Titanic competition by Kaggle to determine the final model performance.</p>
-
-<p>Finally 3 different machine learning techniques are compared.</p>
-
-<ol>
-<li>Logistic Regression</li>
-<li>Random Forest (RF)</li>
-<li>Suport Vector Machine (SVM) with a radial kernel</li>
-</ol>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-13" style="background:;">
-  <hgroup>
-    <h2>Response Operator Characteristic (ROC)</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>A ROC plot illustrates the performance of a binary classifier system as its discrimination threshold is varied. The curve is created by plotting the true positive rate against the false positive rate at various threshold settings.</p>
-
-<p><img src="assets/fig/unnamed-chunk-10-1.png" alt="plot of chunk unnamed-chunk-10"> </p>
-
-<pre><code>##  Area under the LogIt curve:      0.7711144 
-##  Area under the RF curve:         0.7787372 
-##  Area under the SVM curve:        0.6376821
-</code></pre>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-14" style="background:;">
-  <hgroup>
     <h2>Model Evaluation Summary</h2>
   </hgroup>
   <article data-timings="">
     <p>All models performed similar. All three models predicted passenger fatalities better than survivals, and none were significantly better or worse than the others. Having to pick one, I went for the Random Forest as it did have a slight, if insignificant, edge.</p>
 
-<p><img src="assets/fig/unnamed-chunk-12-1.png" alt="plot of chunk unnamed-chunk-12"> </p>
+<p><img src="assets/fig/unnamed-chunk-9-1.png" alt="plot of chunk unnamed-chunk-9"> </p>
 
-<h2>Model Prediction</h2>
-
-<p>To create the final model, the selected Random Forest model was re-trained using all training data. How well it will do on the Titanic competion? We will see. For the moment my submission is scoring pretty high. But that does not at all mean the model will do well on the other 50% of the test data. We will see in December 2014!</p>
-
-  </article>
-  <!-- Presenter Notes -->
-</slide>
-
-<slide class="" id="slide-15" style="background:;">
-  <hgroup>
-    <h2>Acknowledgements</h2>
-  </hgroup>
-  <article data-timings="">
-    <p>I learned a lot about R and the Titanic competition from these two tutorials</p>
-
-<ol>
-<li><p>Stepen Trevors (trevorstephens.com/post/72916401642/titanic-getting-started-with-r)</p></li>
-<li><p>Curt Wehrley (github.com/wehrley/wehrley.github.io/blob/master/SOUPTONUTS.md)</p></li>
-</ol>
+<p>The final answer will be known at the end of the Kaggle competition in December 2014. Can you do better? 
+Try it out on <a href="http://thiemom.shinyapps.io/dataproducts-titanic">http://thiemom.shinyapps.io/dataproducts-titanic</a></p>
 
   </article>
   <!-- Presenter Notes -->
@@ -333,92 +126,26 @@ Indeed a higher percentage of women and children survived!</p>
     <ul>
       <li>
       <a href="#" target="_self" rel='tooltip' 
-        data-slide=1 title='About Me'>
+        data-slide=1 title='Introduction'>
          1
       </a>
     </li>
     <li>
       <a href="#" target="_self" rel='tooltip' 
-        data-slide=2 title='Introduction'>
+        data-slide=2 title='Women and Children First ?'>
          2
       </a>
     </li>
     <li>
       <a href="#" target="_self" rel='tooltip' 
-        data-slide=3 title='Titanic Data'>
+        data-slide=3 title='Model Evaluation'>
          3
       </a>
     </li>
     <li>
       <a href="#" target="_self" rel='tooltip' 
-        data-slide=4 title='Exploring the Data'>
+        data-slide=4 title='Model Evaluation Summary'>
          4
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=5 title='Missing Data'>
-         5
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=6 title='Summary Missing Data'>
-         6
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=7 title='Fate of the Titanic Passengers'>
-         7
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=8 title='Women and Children First ?'>
-         8
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=9 title='Feature Engineering'>
-         9
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=10 title='Variable Selection'>
-         10
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=11 title='Important Variables'>
-         11
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=12 title='Model Selection'>
-         12
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=13 title='Response Operator Characteristic (ROC)'>
-         13
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=14 title='Model Evaluation Summary'>
-         14
-      </a>
-    </li>
-    <li>
-      <a href="#" target="_self" rel='tooltip' 
-        data-slide=15 title='Acknowledgements'>
-         15
       </a>
     </li>
   </ul>
