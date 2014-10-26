@@ -57,7 +57,7 @@ Now let's select the main variables and compare some machine learning models ...
 
 ## Model Evaluation
 
-ROC plots illustrate the performance of a binary classifier system as its discrimination threshold is varied. The curves are created by plotting the true positive rate against the false positive rate at various threshold settings.
+Receiver Operator Characteristic plots illustrate the performance of binary classifier systems as their discrimination threshold is varied. The plot shows the true positive against the false positive rate at various threshold settings.
 Looks like we have a winner, or is it coincidence?
 
 ![plot of chunk unnamed-chunk-7](assets/fig/unnamed-chunk-7-1.png) 
@@ -80,6 +80,9 @@ All models performed similar. All three models predicted passenger fatalities be
 
 The final answer will be known at the end of the Kaggle competition in December 2014. Can you do better? 
 Try it out on http://thiemom.shinyapps.io/dataproducts-titanic
+
+The source code of this presentation is at http://github.com/thiemom/dataproducts-titanic
+
 
 
 
